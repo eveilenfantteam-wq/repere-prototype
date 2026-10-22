@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repère</title>
+<style>
+  :root{
+    --encre:#14140F;
+    --encre-60:#6E6B62;
+    --encre-25:#C9C6BB;
+    --accent:#DD3B1E;
+    --papier:#FBFAF7;
+    --survol:#F2EFE7;
+    --filet:#E7E3D9;
+    --sans: ui-sans-serif, "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#EEEAE1;
+    font-family:var(--sans);
+    color:var(--encre);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    padding:32px 16px 48px;
+  }
+  .appareil{
+    width:390px;height:760px;
+    background:var(--papier);
+    border:1px solid var(--encre-25);
+    border-radius:34px;
+    overflow:hidden;
+    position:relative;
+    display:flex;flex-direction:column;
+    box-shadow:0 1px 0 rgba(20,20,15,.04);
+  }
+  @media (max-width:430px){
+    .appareil{width:100%;height:82vh;border-radius:24px;}
+    body{padding:16px 8px 24px;}
+  }
+  .ic{
+    width:24px;height:24px;
+    flex:none;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.5;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .ic-16{width:16px;height:16px;stroke-width:1.875;}
+  .ic-20{width:20px;height:20px;stroke-width:1.5;}
+  .ic-32{width:32px;height:32px;stroke-width:1.5;}
+  .statut{
+    height:34px;flex:none;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;
+    font:11px/1 var(--mono);color:var(--encre-60);
+  }
+  .entete-ecran{
+    flex:none;
+    padding:6px 20px 14px;
+    display:flex;align-items:center;gap:12px;min-height:52px;
+  }
+  .entete-ecran h2{
+    font-size:21px;font-weight:600;margin:0;letter-spacing:-0.02em;
+  }
+  .entete-ecran .droite{margin-left:auto;display:flex;gap:2px;}
+  .bouton-icone{
+    width:44px;height:44px;
+    display:grid;place-items:center;
+    background:transparent;border:0;padding:0;
+    color:var(--encre);cursor:pointer;border-radius:50%;
+    position:relative;
+  }
+  .bouton-icone[hidden]{display:none;}
+  .bouton-icone:hover{background:var(--survol);}
+  .bouton-icone:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  .vue{flex:1;overflow-y:auto;padding:0 20px 88px;}
+  .vue::-webkit-scrollbar{width:0;}
+  .ecran{display:none;flex-direction:column;height:100%;}
+  .ecran.actif{display:flex;}
+  .bandeau{
+    display:flex;align-items:center;gap:10px;
+    background:var(--survol);
+    border-radius:12px;padding:10px 12px;
+    font-size:12.5px;color:var(--encre-60);
+    margin-bottom:16px;
+  }
+  .carte{
+    border:1px solid var(--filet);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:10px;
+    background:var(--papier);
+  }
+  .carte-titre{font-size:12px;color:var(--encre-60);margin:0 0 10px;}
+  .ligne{
+    display:flex;align-items:center;gap:12px;
+    width:100%;
+    min-height:56px;
+    padding:8px 0;
+    background:transparent;border:0;
+    border-bottom:1px solid var(--filet);
+    font:inherit;color:inherit;text-align:left;
+    cursor:pointer;
+  }
+  .ligne:last-child{border-bottom:0;}
+  .ligne:hover{background:var(--survol);}
+  .ligne:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  .ligne .texte{flex:1;min-width:0;}
+  .ligne .titre{font-size:14.5px;font-weight:500;display:block;letter-spacing:-0.01em;}
+  .ligne .detail{font-size:12.5px;color:var(--encre-60);display:block;margin-top:2px;}
+  .ligne .chevron{color:var(--encre-25);}
+  .principal{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    width:100%;min-height:52px;
+    border-radius:12px;border:1px solid var(--encre);
+    background:var(--encre);color:var(--papier);
+    font:inherit;font-size:14.5px;font-weight:500;
+    cursor:pointer;margin-top:4px;
+  }
+  .principal:hover{background:#000;}
+  .principal:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .secondaire{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    width:100%;min-height:52px;
+    border-radius:12px;border:1px solid var(--encre-25);
+    background:transparent;color:var(--encre);
+    font:inherit;font-size:14.5px;font-weight:500;
+    cursor:pointer;margin-top:8px;
+  }
+  .secondaire:hover{background:var(--survol);}
+  .secondaire:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .flottant{
+    position:absolute;right:20px;bottom:96px;
+    width:56px;height:56px;border-radius:50%;
+    background:var(--encre);color:var(--papier);
+    border:0;display:grid;place-items:center;cursor:pointer;
+    z-index:3;
+  }
+  .flottant:hover{background:#000;}
+  .flottant:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .jour{margin-bottom:18px;}
+  .jour-titre{
+    font:11.5px/1 var(--mono);color:var(--encre-60);
+    display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  }
+  .creneau{
+    display:flex;gap:12px;padding:10px 0;
+    border-bottom:1px solid var(--filet);
+    font-size:13.5px;
+  }
+  .creneau .heure{font:12px/1.5 var(--mono);color:var(--encre-60);width:44px;flex:none;}
+  .pile{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:20px;
+    padding-bottom:16px;
+  }
+  .fiche{
+    width:100%;aspect-ratio:3/2;
+    perspective:1200px;background:transparent;border:0;padding:0;
+    cursor:pointer;font:inherit;color:inherit;
+  }
+  .fiche:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:16px;}
+  .fiche-int{
+    position:relative;width:100%;height:100%;
+    transition:transform .45s cubic-bezier(.2,.7,.3,1);
+    transform-style:preserve-3d;
+  }
+  .fiche.retournee .fiche-int{transform:rotateY(180deg);}
+  .face{
+    position:absolute;inset:0;
+    backface-visibility:hidden;
+    border:1px solid var(--filet);border-radius:16px;
+    display:grid;place-items:center;padding:24px;
+    text-align:center;background:var(--papier);
+  }
+  .face .q{font-size:19px;font-weight:500;line-height:1.35;letter-spacing:-0.01em;}
+  .face .r{font-size:16px;line-height:1.5;}
+  .verso{transform:rotateY(180deg);}
+  .compteur{font:12px/1 var(--mono);color:var(--encre-60);}
+  .duo{display:flex;gap:8px;width:100%;}
+  .duo .secondaire{margin-top:0;}
+  @media (prefers-reduced-motion: reduce){
+    .fiche-int{transition:none;}
+  }
+  .choix{
+    display:flex;align-items:center;gap:12px;
+    width:100%;min-height:60px;padding:12px 14px;
+    border:1px solid var(--filet);border-radius:12px;
+    background:transparent;font:inherit;font-size:14.5px;color:inherit;
+    text-align:left;cursor:pointer;margin-bottom:10px;
+  }
+  .choix:hover{background:var(--survol);}
+  .choix:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .case{
+    width:22px;height:22px;flex:none;
+    border:1.5px solid var(--encre-25);border-radius:6px;
+    display:grid;place-items:center;color:transparent;
+  }
+  .choix[aria-checked="true"]{border-color:var(--encre);}
+  .choix[aria-checked="true"] .case{border-color:var(--encre);color:var(--encre);}
+  .verdict{font-size:13px;color:var(--encre-60);margin:14px 0 0;line-height:1.5;}
+  .focus{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:22px;
+  }
+  .cadran{
+    font:300 62px/1 var(--sans);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-0.03em;
+  }
+  .focus .sous{font-size:13px;color:var(--encre-60);text-align:center;line-height:1.5;max-width:230px;}
+  .mesure{display:flex;align-items:baseline;gap:8px;margin:2px 0 14px;}
+  .mesure .valeur{font-size:34px;font-weight:600;letter-spacing:-0.03em;}
+  .mesure .unite{font-size:13px;color:var(--encre-60);}
+  .barres{display:flex;align-items:flex-end;gap:6px;height:74px;margin:16px 0 8px;}
+  .barre{flex:1;background:var(--survol);border-radius:3px;min-height:4px;}
+  .barre.pleine{background:var(--encre);}
+  .jours{display:flex;gap:6px;font:10.5px/1 var(--mono);color:var(--encre-60);}
+  .jours span{flex:1;text-align:center;}
+  .membre{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--filet);}
+  .pastille{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--survol);display:grid;place-items:center;
+    font-size:13px;font-weight:600;color:var(--encre-60);flex:none;
+  }
+  .membre .nom{font-size:14.5px;}
+  .membre .role{font-size:12.5px;color:var(--encre-60);}
+  .voile{
+    position:absolute;inset:0;background:rgba(20,20,15,.28);
+    display:none;z-index:8;
+  }
+  .voile.ouvert{display:block;}
+  .feuille{
+    position:absolute;left:0;right:0;bottom:0;
+    background:var(--papier);
+    border-radius:20px 20px 0 0;
+    padding:8px 20px 28px;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.2,.7,.3,1);
+  }
+  .voile.ouvert .feuille{transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){ .feuille{transition:none;} }
+  .poignee{width:36px;height:4px;border-radius:2px;background:var(--encre-25);margin:6px auto 14px;}
+  .feuille h3{font-size:17px;margin:0 0 4px;font-weight:600;letter-spacing:-0.02em;}
+  .feuille .intro{font-size:12.5px;color:var(--encre-60);margin:0 0 12px;}
+  .sans-animation .fiche-int,.sans-animation .feuille{transition:none!important;}
+  .champ-repere{width:100%;min-height:44px;padding:10px 12px;background:var(--papier);border:1px solid var(--encre-25);border-radius:10px;color:var(--encre);font:inherit;font-size:14px;}
+  .champ-repere:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .texte-aide{font-size:12px;color:var(--encre-60);line-height:1.5;}
+  .onglets{
+    flex:none;display:flex;
+    border-top:1px solid var(--filet);
+    background:var(--papier);
+    padding:6px 4px 14px;
+  }
+  .onglet{
+    flex:1;min-height:52px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    background:transparent;border:0;cursor:pointer;
+    color:var(--encre-60);font:inherit;font-size:10.5px;
+    border-radius:12px;
+  }
+  .onglet:hover{background:var(--survol);}
+  .onglet:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;}
+  .onglet[aria-current="page"]{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="course_icon" viewBox="0 0 24 24">
+    <path d="M3.5 5.5h5a3.5 3.5 0 0 1 3.5 3.5v10a2.5 2.5 0 0 0-2.5-2.5h-6z"/>
+    <path d="M20.5 5.5h-5A3.5 3.5 0 0 0 12 9v10a2.5 2.5 0 0 1 2.5-2.5h6z"/></symbol>
+  <symbol id="schedule_icon" viewBox="0 0 24 24">
+    <rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M3.5 10.5h17"/>
+    <path d="M8 3.5v4"/><path d="M16 3.5v4"/>
+    <path d="M7.5 14.5h3"/><path d="M13.5 14.5h3"/><path d="M7.5 17.5h3"/></symbol>
+  <symbol id="schedule_icon_sm" viewBox="0 0 24 24">
+    <rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M3.5 10.5h17"/>
+    <path d="M8 3.5v4"/><path d="M16 3.5v4"/></symbol>
+  <symbol id="flashcard_icon" viewBox="0 0 24 24">
+    <path d="M7 5.5h11a2.5 2.5 0 0 1 2.5 2.5v8"/>
+    <rect x="2.5" y="8.5" width="14" height="11" rx="2.5"/>
+    <path d="M6 12.5h7"/><path d="M6 15.5h4"/></symbol>
+  <symbol id="quiz_icon" viewBox="0 0 24 24">
+    <rect x="3.5" y="4" width="4" height="4" rx="1.2"/><path d="M10.5 6h10"/>
+    <rect x="3.5" y="10" width="4" height="4" rx="1.2"/><path d="M10.5 12h10"/>
+    <rect x="3.5" y="16" width="4" height="4" rx="1.2"/><path d="M10.5 18h6"/></symbol>
+  <symbol id="progress_icon" viewBox="0 0 24 24">
+    <path d="M4 20.5h5v-5.5h5v-5.5h5v-5.5"/>
+    <circle cx="19" cy="4" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="timer_icon" viewBox="0 0 24 24">
+    <circle cx="12" cy="13.75" r="7.5"/><path d="M12 9.75v4l2.5 2"/>
+    <path d="M9.5 2.75h5"/><path d="M12 2.75v3.5"/></symbol>
+  <symbol id="note_icon" viewBox="0 0 24 24">
+    <path d="M14 3.5H6.5A1.5 1.5 0 0 0 5 5v14a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V8.5z"/>
+    <path d="M14 3.5v5h5"/><path d="M8.5 13h7"/><path d="M8.5 16.5h4.5"/></symbol>
+  <symbol id="goal_icon" viewBox="0 0 24 24">
+    <path d="M5.5 20.5V3.5"/><path d="M5.5 4.5h13l-3 4 3 4h-13"/></symbol>
+  <symbol id="study_group_icon" viewBox="0 0 24 24">
+    <circle cx="9.5" cy="8.5" r="3.5"/><path d="M3.5 19.5a6 6 0 0 1 12 0"/>
+    <path d="M16.2 5.7a3.5 3.5 0 0 1 0 5.6"/><path d="M17.6 14.4a6 6 0 0 1 2.9 5.1"/></symbol>
+  <symbol id="add_course_icon" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v7"/><path d="M8.5 12h7"/></symbol>
+  <symbol id="disclosure_icon" viewBox="0 0 24 24"><path d="M9.5 5.5l7 6.5-7 6.5"/></symbol>
+  <symbol id="back_icon" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 5.5L4.5 12l6.5 6.5"/></symbol>
+  <symbol id="close_icon" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
+  <symbol id="check_icon" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-10"/></symbol>
+  <symbol id="search_icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l4.5 4.5"/></symbol>
+  <symbol id="settings_icon" viewBox="0 0 24 24">
+    <path d="M4 7.5h10"/><path d="M18 7.5h2"/><circle cx="16" cy="7.5" r="2"/>
+    <path d="M4 16.5h4"/><path d="M12 16.5h8"/><circle cx="10" cy="16.5" r="2"/></symbol>
+  <symbol id="offline_icon" viewBox="0 0 24 24">
+    <path d="M6.5 17.5h10a3.5 3.5 0 0 0 1.2-6.8A5.5 5.5 0 0 0 8.4 8.1"/>
+    <path d="M6.5 17.5a3.5 3.5 0 0 1-.4-7"/><path d="M3.5 3.5l17 17"/></symbol>
+  <symbol id="invite_link_icon" viewBox="0 0 24 24">
+    <path d="M10 14a3.5 3.5 0 0 1 0-5l3-3a3.5 3.5 0 0 1 5 5l-1.5 1.5"/>
+    <path d="M14 10a3.5 3.5 0 0 1 0 5l-3 3a3.5 3.5 0 0 1-5-5L7.5 11.5"/></symbol>
+  <symbol id="play_icon" viewBox="0 0 24 24"><path d="M7.5 4.8l11 7.2-11 7.2z"/></symbol>
+  <symbol id="pause_icon" viewBox="0 0 24 24"><path d="M9.5 5.5v13"/><path d="M14.5 5.5v13"/></symbol>
+</svg>
+
+<div class="appareil">
+  <div class="statut">
+    <span>9:41</span>
+    <span>Repère</span>
+  </div>
+
+  <div class="entete-ecran">
+    <button class="bouton-icone" id="btn-retour" hidden aria-label="Retour">
+      <svg class="ic"><use href="#back_icon"/></svg>
+    </button>
+    <h2 id="titre-ecran">Cours</h2>
+    <div class="droite">
+      <button class="bouton-icone" id="btn-rechercher" aria-label="Rechercher">
+        <svg class="ic"><use href="#search_icon"/></svg>
+      </button>
+      <button class="bouton-icone" id="btn-reglages" aria-label="Réglages">
+        <svg class="ic"><use href="#settings_icon"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="vue">
+    <section class="ecran actif" id="e-cours">
+      <div class="bandeau">
+        <svg class="ic ic-20"><use href="#offline_icon"/></svg>
+        <span>Prototype local : vos réponses aux cartes sont conservées sur cet appareil. Aucune synchronisation en ligne.</span>
+      </div>
+      <div class="carte">
+        <p class="carte-titre">Prochaine session</p>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <svg class="ic"><use href="#flashcard_icon"/></svg>
+          <div>
+            <div style="font-size:15px;font-weight:500;">Histoire contemporaine</div>
+            <div style="font-size:12.5px;color:var(--encre-60);">3 cartes de démonstration</div>
+          </div>
+        </div>
+        <button class="principal" data-aller="e-fiches">
+          <svg class="ic ic-20"><use href="#play_icon"/></svg>
+          Commencer
+        </button>
+      </div>
+      <p class="carte-titre" style="margin:20px 0 4px;">Ce semestre</p>
+      <button class="ligne" data-aller="e-detail">
+        <svg class="ic"><use href="#course_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Histoire contemporaine</span>
+          <span class="detail">7 chapitres · 3 cartes de démonstration</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+      <button class="ligne" data-aller="e-detail">
+        <svg class="ic"><use href="#course_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Analyse I</span>
+          <span class="detail">5 chapitres · à jour</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+      <button class="ligne" data-aller="e-detail">
+        <svg class="ic"><use href="#course_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Biologie cellulaire</span>
+          <span class="detail">9 chapitres · 4 cartes en attente</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+      <button class="ligne" data-aller="e-detail">
+        <svg class="ic"><use href="#course_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Anglais B2</span>
+          <span class="detail">3 chapitres · à jour</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+    </section>
+
+    <section class="ecran" id="e-detail">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--encre-60);margin-bottom:16px;">
+        <svg class="ic ic-16"><use href="#schedule_icon_sm"/></svg>
+        <span>Prochain cours mercredi, 10:15 — salle B204</span>
+      </div>
+      <button class="principal" data-aller="e-fiches">
+        <svg class="ic ic-20"><use href="#flashcard_icon"/></svg>
+        Réviser les 3 cartes
+      </button>
+      <button class="secondaire" data-aller="e-quiz">
+        <svg class="ic ic-20"><use href="#quiz_icon"/></svg>
+        Quiz de fin de chapitre
+      </button>
+      <button class="secondaire" data-aller="e-focus">
+        <svg class="ic ic-20"><use href="#timer_icon"/></svg>
+        Session focus de 25 minutes
+      </button>
+      <p class="carte-titre" style="margin:24px 0 4px;">Chapitres</p>
+      <button class="ligne" data-aller="e-notes">
+        <svg class="ic"><use href="#note_icon"/></svg>
+        <span class="texte">
+          <span class="titre">3 — L'entre-deux-guerres</span>
+          <span class="detail">Notes prises le 12 mars</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+      <button class="ligne" data-aller="e-notes">
+        <svg class="ic"><use href="#note_icon"/></svg>
+        <span class="texte">
+          <span class="titre">4 — Les accords de Munich</span>
+          <span class="detail">Pas encore de notes</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+      <button class="ligne" data-aller="e-notes">
+        <svg class="ic"><use href="#note_icon"/></svg>
+        <span class="texte">
+          <span class="titre">5 — L'économie de guerre</span>
+          <span class="detail">Notes prises le 26 mars</span>
+        </span>
+        <svg class="ic ic-20 chevron"><use href="#disclosure_icon"/></svg>
+      </button>
+    </section>
+
+    <section class="ecran" id="e-notes">
+      <p style="font-size:12px;color:var(--encre-60);margin:0 0 14px;font-family:var(--mono);">12 mars · Histoire contemporaine</p>
+      <p style="font-size:14.5px;line-height:1.65;margin:0 0 14px;">
+        Les traités de 1919 laissent trois foyers de tension : les frontières
+        orientales, les réparations allemandes, et le statut des minorités.
+      </p>
+      <p style="font-size:14.5px;line-height:1.65;margin:0 0 14px;">
+        Retenir la distinction entre révision négociée et révision unilatérale —
+        c'est elle qui structure toute la décennie suivante.
+      </p>
+      <button class="secondaire" data-creer="carte">
+        <svg class="ic ic-20"><use href="#flashcard_icon"/></svg>
+        Créer une carte depuis ces notes
+      </button>
+    </section>
+
+    <section class="ecran" id="e-planning">
+      <div class="jour">
+        <div class="jour-titre">
+          <svg class="ic ic-16"><use href="#schedule_icon_sm"/></svg>
+          Lundi 14
+        </div>
+        <div class="creneau"><span class="heure">08:15</span><span>Analyse I — auditoire C</span></div>
+        <div class="creneau"><span class="heure">10:15</span><span>Biologie cellulaire — labo 3</span></div>
+        <div class="creneau"><span class="heure">14:00</span><span>Anglais B2 — salle 118</span></div>
+      </div>
+      <div class="jour">
+        <div class="jour-titre">
+          <svg class="ic ic-16"><use href="#schedule_icon_sm"/></svg>
+          Mardi 15
+        </div>
+        <div class="creneau"><span class="heure">09:00</span><span>Histoire contemporaine — B204</span></div>
+        <div class="creneau"><span class="heure">16:00</span><span>Groupe d'étude — bibliothèque</span></div>
+      </div>
+      <div class="jour">
+        <div class="jour-titre">
+          <svg class="ic ic-16"><use href="#schedule_icon_sm"/></svg>
+          Mercredi 16
+        </div>
+        <div class="creneau"><span class="heure">10:15</span><span>Histoire contemporaine — B204</span></div>
+      </div>
+    </section>
+
+    <section class="ecran" id="e-fiches">
+      <div class="pile">
+        <span class="compteur" id="compteur-fiches">Carte 1 sur 3</span>
+        <button class="fiche" id="fiche" aria-label="Retourner la carte">
+          <div class="fiche-int">
+            <div class="face"><span class="q" id="fiche-q">Que prévoit l'article 231 du traité de Versailles ?</span></div>
+            <div class="face verso"><span class="r" id="fiche-r">La reconnaissance par l'Allemagne de sa responsabilité dans les dommages de guerre — base juridique des réparations.</span></div>
+          </div>
+        </button>
+        <div class="duo">
+          <button class="secondaire" data-fiche="revoir">À revoir</button>
+          <button class="secondaire" data-fiche="acquise">Acquise</button>
+        </div>
+        <p style="font-size:12px;color:var(--encre-60);margin:0;text-align:center;">Touchez la carte pour voir la réponse.</p>
+      </div>
+    </section>
+
+    <section class="ecran" id="e-quiz">
+      <p style="font-size:12px;color:var(--encre-60);font-family:var(--mono);margin:0 0 6px;">Question de démonstration · 1 sur 1</p>
+      <p style="font-size:17px;font-weight:500;line-height:1.4;margin:0 0 18px;letter-spacing:-0.01em;">
+        En quelle année les accords de Munich sont-ils signés ?
+      </p>
+      <div role="radiogroup" aria-label="Réponses possibles">
+        <button class="choix" role="radio" aria-checked="false" data-juste="false">
+          <span class="case"><svg class="ic ic-16"><use href="#check_icon"/></svg></span>
+          <span>1936</span>
+        </button>
+        <button class="choix" role="radio" aria-checked="false" data-juste="true">
+          <span class="case"><svg class="ic ic-16"><use href="#check_icon"/></svg></span>
+          <span>1938</span>
+        </button>
+        <button class="choix" role="radio" aria-checked="false" data-juste="false">
+          <span class="case"><svg class="ic ic-16"><use href="#check_icon"/></svg></span>
+          <span>1940</span>
+        </button>
+      </div>
+      <p class="verdict" id="verdict-quiz">Une seule réponse par question.</p>
+    </section>
+
+    <section class="ecran" id="e-focus">
+      <div class="focus">
+        <svg class="ic ic-32" style="color:var(--encre-60)"><use href="#timer_icon"/></svg>
+        <div class="cadran" id="cadran">25:00</div>
+        <p class="sous">Histoire contemporaine — chapitre 4.<br>Minuteur local : les notifications externes ne sont pas désactivées.</p>
+        <button class="principal" id="btn-focus" style="max-width:200px;">
+          <svg class="ic ic-20" id="ic-focus"><use href="#play_icon"/></svg>
+          <span id="txt-focus">Démarrer</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="ecran" id="e-progres">
+      <p class="carte-titre" style="margin:0 0 2px;">Cette semaine · données fictives</p>
+      <div class="mesure">
+        <span class="valeur">5</span>
+        <span class="unite">jours travaillés sur 7</span>
+      </div>
+      <div class="barres">
+        <div class="barre pleine" style="height:46%"></div>
+        <div class="barre pleine" style="height:72%"></div>
+        <div class="barre" style="height:8%"></div>
+        <div class="barre pleine" style="height:58%"></div>
+        <div class="barre pleine" style="height:88%"></div>
+        <div class="barre pleine" style="height:34%"></div>
+        <div class="barre" style="height:8%"></div>
+      </div>
+      <div class="jours"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="carte" style="margin-top:22px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <svg class="ic"><use href="#goal_icon"/></svg>
+          <div>
+            <div style="font-size:14.5px;font-weight:500;">Objectif de la semaine</div>
+            <div style="font-size:12.5px;color:var(--encre-60);margin-top:2px;">120 cartes revues — il en reste 34</div>
+          </div>
+        </div>
+      </div>
+      <p class="carte-titre" style="margin:20px 0 4px;">Par cours</p>
+      <div class="ligne" style="cursor:default;">
+        <svg class="ic"><use href="#progress_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Histoire contemporaine</span>
+          <span class="detail">Palier 3 jours · 62 cartes acquises</span>
+        </span>
+        
+      </div>
+      <div class="ligne" style="cursor:default;">
+        <svg class="ic"><use href="#progress_icon"/></svg>
+        <span class="texte">
+          <span class="titre">Biologie cellulaire</span>
+          <span class="detail">Palier 1 jour · 24 cartes acquises</span>
+        </span>
+        </div>
+    </section>
+
+    <section class="ecran" id="e-groupe">
+      <div class="carte">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <svg class="ic"><use href="#study_group_icon"/></svg>
+          <div>
+            <div style="font-size:15px;font-weight:500;">Histoire — révisions</div>
+            <div style="font-size:12.5px;color:var(--encre-60);">4 membres · jeu de cartes partagé</div>
+          </div>
+        </div>
+        <button class="secondaire" id="btn-invitation" style="margin-top:0;">
+          <svg class="ic ic-20"><use href="#invite_link_icon"/></svg>
+          Voir l’invitation de démonstration
+        </button>
+      </div>
+      <p class="carte-titre" style="margin:20px 0 4px;">Membres</p>
+      <div class="membre"><span class="pastille">CL</span><div><div class="nom">Camille</div><div class="role">A ajouté 12 cartes cette semaine</div></div></div>
+      <div class="membre"><span class="pastille">NO</span><div><div class="nom">Noah</div><div class="role">A ajouté 5 cartes cette semaine</div></div></div>
+      <div class="membre"><span class="pastille">SA</span><div><div class="nom">Sarah</div><div class="role">N'a pas révisé cette semaine</div></div></div>
+      <div class="membre"><span class="pastille">VO</span><div><div class="nom">Vous</div><div class="role">A ajouté 9 cartes cette semaine</div></div></div>
+    </section>
+  </div>
+
+  <button class="flottant" id="fab" data-feuille="ouvrir" aria-label="Ajouter">
+    <svg class="ic"><use href="#add_course_icon"/></svg>
+  </button>
+
+  <div class="voile" id="voile">
+    <div class="feuille" role="dialog" aria-modal="true" aria-label="Ajouter">
+      <div class="poignee"></div>
+      <div style="display:flex;align-items:flex-start;">
+        <div>
+          <h3>Ajouter</h3>
+          <p class="intro">Que voulez-vous créer ?</p>
+        </div>
+        <button class="bouton-icone" data-feuille="fermer" style="margin-left:auto;" aria-label="Fermer">
+          <svg class="ic"><use href="#close_icon"/></svg>
+        </button>
+      </div>
+      <button class="ligne" data-creer="cours">
+        <svg class="ic"><use href="#course_icon"/></svg>
+        <span class="texte"><span class="titre">Un cours</span><span class="detail">Matière, horaire, salle</span></span>
+      </button>
+      <button class="ligne" data-creer="carte">
+        <svg class="ic"><use href="#flashcard_icon"/></svg>
+        <span class="texte"><span class="titre">Une carte mémoire</span><span class="detail">Question et réponse</span></span>
+      </button>
+      <button class="ligne" data-creer="note">
+        <svg class="ic"><use href="#note_icon"/></svg>
+        <span class="texte"><span class="titre">Une note</span><span class="detail">Liée à un chapitre</span></span>
+      </button>
+      <button class="ligne" data-creer="objectif">
+        <svg class="ic"><use href="#goal_icon"/></svg>
+        <span class="texte"><span class="titre">Un objectif</span><span class="detail">Pour la semaine</span></span>
+      </button>
+    </div>
+  </div>
+
+
+  <div class="voile" id="voile-info">
+    <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="info-titre">
+      <div class="poignee"></div>
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="flex:1"><h3 id="info-titre">Information</h3><p class="intro" id="info-texte"></p></div>
+        <button class="bouton-icone" id="fermer-info" aria-label="Fermer"><svg class="ic"><use href="#close_icon"/></svg></button>
+      </div>
+      <div id="info-contenu"></div>
+    </div>
+  </div>
+
+  <nav class="onglets" aria-label="Navigation principale">
+    <button class="onglet" data-onglet="e-cours" aria-current="page">
+      <svg class="ic"><use href="#course_icon"/></svg>
+      Cours
+    </button>
+    <button class="onglet" data-onglet="e-planning">
+      <svg class="ic"><use href="#schedule_icon"/></svg>
+      Planning
+    </button>
+    <button class="onglet" data-onglet="e-fiches">
+      <svg class="ic"><use href="#flashcard_icon"/></svg>
+      Réviser
+    </button>
+    <button class="onglet" data-onglet="e-progres">
+      <svg class="ic"><use href="#progress_icon"/></svg>
+      Progrès
+    </button>
+    <button class="onglet" data-onglet="e-groupe">
+      <svg class="ic"><use href="#study_group_icon"/></svg>
+      Groupe
+    </button>
+  </nav>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var ECRANS = {
+    "e-cours":    {titre:"Cours",                  onglet:"e-cours",    retour:null,      fab:true},
+    "e-detail":   {titre:"Histoire contemporaine", onglet:"e-cours",    retour:"e-cours", fab:true},
+    "e-notes":    {titre:"L'entre-deux-guerres",   onglet:"e-cours",    retour:"e-detail",fab:false},
+    "e-planning": {titre:"Semaine du 14",          onglet:"e-planning", retour:null,      fab:true},
+    "e-fiches":   {titre:"Réviser",                onglet:"e-fiches",   retour:null,      fab:false},
+    "e-quiz":     {titre:"Quiz",                   onglet:"e-fiches",   retour:"e-detail",fab:false},
+    "e-focus":    {titre:"Session focus",          onglet:"e-fiches",   retour:"e-detail",fab:false},
+    "e-progres":  {titre:"Progression",            onglet:"e-progres",  retour:null,      fab:true},
+    "e-groupe":   {titre:"Groupe d'étude",         onglet:"e-groupe",   retour:null,      fab:true}
+  };
+  var $  = function(s,c){ return (c||document).querySelector(s); };
+  var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+  var courant = "e-cours";
+
+  function aller(id){
+    if(!ECRANS[id]) return;
+    $$(".ecran").forEach(function(el){ el.classList.toggle("actif", el.id === id); });
+    var cfg = ECRANS[id];
+    $("#titre-ecran").textContent = cfg.titre;
+    $("#btn-retour").hidden = !cfg.retour;
+    $("#fab").style.display = cfg.fab ? "grid" : "none";
+    $$(".onglet").forEach(function(b){
+      if(b.dataset.onglet === cfg.onglet){ b.setAttribute("aria-current","page"); }
+      else { b.removeAttribute("aria-current"); }
+    });
+    $(".vue").scrollTop = 0;
+    courant = id;
+    arreterFocus();
+  }
+
+  document.addEventListener("click", function(e){
+    var cible = e.target.closest("[data-aller]");
+    if(cible){ aller(cible.dataset.aller); return; }
+    var ong = e.target.closest("[data-onglet]");
+    if(ong){ aller(ong.dataset.onglet); return; }
+    var f = e.target.closest("[data-feuille]");
+    if(f){ $("#voile").classList.toggle("ouvert", f.dataset.feuille === "ouvrir"); return; }
+    var creer = e.target.closest("[data-creer]");
+    if(creer){ $("#voile").classList.remove("ouvert"); ouvrirInfo("Création", "Fonction présentée à titre de parcours de démonstration.", "La création d’un élément (« " + creer.dataset.creer + " ») n’est pas activée dans ce prototype d’icônes."); return; }
+    if(e.target.closest("#btn-retour")){
+      var r = ECRANS[courant].retour;
+      if(r) aller(r);
+      return;
+    }
+    if(e.target === $("#voile")){ $("#voile").classList.remove("ouvert"); }
+    if(e.target === $("#voile-info")){ fermerInfo(); }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape"){ $("#voile").classList.remove("ouvert"); fermerInfo(); }
+  });
+
+
+  var derniereCommande = null;
+  function ouvrirInfo(titre, introduction, message){
+    $("#info-titre").textContent = titre;
+    $("#info-texte").textContent = introduction;
+    $("#info-contenu").replaceChildren();
+    if(message){ var p=document.createElement("p"); p.className="texte-aide"; p.textContent=message; $("#info-contenu").appendChild(p); }
+    $("#voile-info").classList.add("ouvert");
+    derniereCommande = document.activeElement;
+    $("#fermer-info").focus();
+  }
+  function fermerInfo(){
+    if(!$("#voile-info").classList.contains("ouvert")) return;
+    $("#voile-info").classList.remove("ouvert");
+    if(derniereCommande && typeof derniereCommande.focus === "function") derniereCommande.focus();
+  }
+  $("#fermer-info").addEventListener("click", fermerInfo);
+  $("#btn-invitation").addEventListener("click", function(){
+    ouvrirInfo("Invitation", "Aucun groupe réel n’est connecté à ce prototype.", "Le partage d’un lien d’invitation sera disponible dans une version connectée de Repère.");
+  });
+  $("#btn-rechercher").addEventListener("click", function(){
+    ouvrirInfo("Rechercher", "Chercher un cours dans les données de démonstration.");
+    var input=document.createElement("input"); input.type="search"; input.className="champ-repere"; input.placeholder="Nom du cours"; input.setAttribute("aria-label","Nom du cours");
+    var zone=document.createElement("div"); zone.setAttribute("aria-live","polite"); zone.style.marginTop="10px";
+    var cours=["Histoire contemporaine", "Analyse I", "Biologie cellulaire", "Anglais B2"];
+    function resultats(){
+      zone.replaceChildren();
+      var terme=input.value.trim().toLocaleLowerCase("fr");
+      var correspondances=cours.filter(function(c){ return c.toLocaleLowerCase("fr").includes(terme); });
+      if(!correspondances.length){ var p=document.createElement("p"); p.className="texte-aide"; p.textContent="Aucun cours trouvé."; zone.appendChild(p); }
+      correspondances.forEach(function(c){var b=document.createElement("button"); b.className="ligne"; b.textContent=c; b.addEventListener("click",function(){if(c === "Histoire contemporaine"){fermerInfo();aller("e-detail");}else{ouvrirInfo(c, "Cours de démonstration", "Le détail de ce cours n’est pas encore disponible dans le prototype.");}}); zone.appendChild(b);});
+    }
+    input.addEventListener("input",resultats);
+    $("#info-contenu").append(input,zone);resultats();input.focus();
+  });
+  $("#btn-reglages").addEventListener("click", function(){
+    ouvrirInfo("Réglages", "Préférences du prototype local.");
+    var label=document.createElement("label");label.className="ligne";label.style.cursor="pointer";
+    var check=document.createElement("input");check.type="checkbox";
+    check.checked=document.documentElement.classList.contains("sans-animation");
+    label.append(check,document.createTextNode(" Réduire les animations"));
+    check.addEventListener("change",function(){document.documentElement.classList.toggle("sans-animation",check.checked);});
+    var reset=document.createElement("button");reset.className="secondaire";reset.textContent="Réinitialiser les réponses aux cartes";
+    reset.addEventListener("click",function(){historique={};try{localStorage.removeItem("repere-cartes-demo");}catch(_){};ouvrirInfo("Réinitialisation", "Les réponses locales ont été effacées.");});
+    $("#info-contenu").append(label,reset);
+  });
+
+  var CARTES = [
+    ["Que prévoit l'article 231 du traité de Versailles ?",
+     "La reconnaissance par l'Allemagne de sa responsabilité dans les dommages de guerre — base juridique des réparations."],
+    ["Qu'appelle-t-on la « politique d'apaisement » ?",
+     "La stratégie franco-britannique de concessions territoriales à l'Allemagne pour éviter un conflit, de 1935 à 1939."],
+    ["Quelle est la portée du pacte germano-soviétique ?",
+     "Il neutralise le front oriental et contient un protocole secret de partage de la Pologne."]
+  ];
+  var iCarte = 0;
+  var historique = {};
+  try { historique = JSON.parse(localStorage.getItem("repere-cartes-demo") || "{}"); } catch (_) { historique = {}; }
+  function actualiserCompteur(){
+    $("#compteur-fiches").textContent = "Carte " + (iCarte + 1) + " sur " + CARTES.length;
+  }
+  actualiserCompteur();
+
+  $("#fiche").addEventListener("click", function(){
+    this.classList.toggle("retournee");
+  });
+
+  $$("[data-fiche]").forEach(function(b){
+    b.addEventListener("click", function(){
+      historique[iCarte] = this.dataset.fiche;
+      try { localStorage.setItem("repere-cartes-demo", JSON.stringify(historique)); } catch (_) {}
+      var fiche = $("#fiche");
+      fiche.classList.remove("retournee");
+      iCarte = (iCarte + 1) % CARTES.length;
+      window.setTimeout(function(){
+        $("#fiche-q").textContent = CARTES[iCarte][0];
+        $("#fiche-r").textContent = CARTES[iCarte][1];
+        $("#compteur-fiches").textContent = "Carte " + (iCarte + 1) + " sur " + CARTES.length;
+      }, 180);
+    });
+  });
+
+  $$(".choix").forEach(function(b){
+    b.addEventListener("click", function(){
+      $$(".choix").forEach(function(o){ o.setAttribute("aria-checked","false"); });
+      this.setAttribute("aria-checked","true");
+      $("#verdict-quiz").textContent = this.dataset.juste === "true"
+        ? "Bonne réponse ! Les accords sont signés le 30 septembre 1938. (Quiz de démonstration.)"
+        : "Réponse incorrecte : les accords de Munich datent de 1938. (Quiz de démonstration.)";
+    });
+  });
+
+  var restant = 1500, minuteur = null;
+  function afficher(){
+    var m = Math.floor(restant / 60), s = restant % 60;
+    $("#cadran").textContent = m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function arreterFocus(){
+    if(minuteur){ window.clearInterval(minuteur); minuteur = null; }
+    $("#ic-focus").innerHTML = '<use href="#play_icon"/>';
+    $("#txt-focus").textContent = restant === 1500 ? "Démarrer" : "Reprendre";
+  }
+  $("#btn-focus").addEventListener("click", function(){
+    if(minuteur){ arreterFocus(); return; }
+    $("#ic-focus").innerHTML = '<use href="#pause_icon"/>';
+    $("#txt-focus").textContent = "Mettre en pause";
+    minuteur = window.setInterval(function(){
+      restant = restant > 0 ? restant - 1 : 0;
+      afficher();
+      if(restant === 0) arreterFocus();
+    }, 1000);
+  });
+  afficher();
+})();
+</script>
+</body>
+</html>
